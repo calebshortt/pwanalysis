@@ -61,9 +61,9 @@ class NGramGenerator(object):
             data_chunk = ['test', ]
             iteration = 0
             while data_chunk:
+                # TODO: This could be multithreaded -- currently a proof of concept
                 data_chunk = list(islice(f, self.chunk_size))
                 sanitized = [str(word).strip() for word in data_chunk if self._word_is_valid(word)]
-
                 chunk_ngrams = generate_ngrams(sanitized, min_size=1)
 
                 logger.debug('iteration: %s\tChunk-Size: %s' % (iteration, len(data_chunk)))
@@ -144,12 +144,12 @@ if __name__ == "__main__":
         for ng in top_ngrams:
             print('%s:%s' % (ng, ngrams[ng]))
 
-    save_file = 'RESULT_%s' % (hashlib.sha256(str(time.time()).encode('utf-8')).hexdigest()[:10])
-    if args.outfile:
+    save_file = 'RESULT_%s.ngram' % (hashlib.sha256(str(time.time()).encode('utf-8')).hexdigest()[:10])
+    if args.outfile and args.outfile is not None:
         save_file = args.outfile
 
-    logger.debug('Saving sorted ngrams to \'%s\'...' % args.outfile)
-    with open(args.outfile, 'w+') as f:
+    logger.debug('Saving sorted ngrams to \'%s\'...' % save_file)
+    with open(save_file, 'w+') as f:
         for ng in sorted_ngrams:
             f.write('%s,%s\n' % (ng, ngrams[ng]))
     logger.debug('Done.')
