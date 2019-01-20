@@ -187,7 +187,7 @@ if __name__ == '__main__':
     start_time = time.time()
 
     parser = argparse.ArgumentParser(description='Basic n-gram generator based on a word-list file')
-    parser.add_argument('-f', dest='filepath', type=str, default=None, help='Path to the required file for the intended purpose (flag)')
+    parser.add_argument('-f', dest='filepath', type=str, default=None, help='Path to the required file for the intended purpose (use flag)')
     parser.add_argument('-w', dest='word', type=str, default=None, help='Word to analyze')
     parser.add_argument('-m', dest='markov', action='store_true', help='Generate Markov Matrix from counted ngram list')
     parser.add_argument('-g', dest='genpw', type=int, default=None, help='Generate a password form the given markov model file with given length')
@@ -197,6 +197,7 @@ if __name__ == '__main__':
     if args.filepath:
         nga = NGramAnalyzer(args.filepath)
     else:
+        parser.print_usage()
         exit()
 
     if args.word and nga:
