@@ -12,6 +12,7 @@ import argparse
 import os
 import logging
 import time
+import hashlib
 
 from itertools import islice
 
@@ -57,24 +58,18 @@ class NGramGenerator(object):
 
             self.base_fname, self.base_ext = os.path.splitext(f.name)
 
-            #--------------------------------------------------------------------------------------
-            # Significantly faster: 24.45s on 1m rows (Compared to 8 minutes with other alg)
-            #--------------------------------------------------------------------------------------
             data_chunk = ['test', ]
             iteration = 0
             while data_chunk:
-                # data_chunk = list(islice(f, 0, self.chunk_size))
                 data_chunk = list(islice(f, self.chunk_size))
                 sanitized = [str(word).strip() for word in data_chunk if self._word_is_valid(word)]
 
-                # chunk_ngrams = self._generate(sanitized)
                 chunk_ngrams = generate_ngrams(sanitized, min_size=1)
 
                 logger.debug('iteration: %s\tChunk-Size: %s' % (iteration, len(data_chunk)))
                 iteration += 1
 
                 self._save_chunk(chunk_ngrams)
-            #--------------------------------------------------------------------------------------
 
     def _save_chunk(self, data):
         self.destination_file = '%s_ngrams_%s' % (self.base_fname, self.base_ext)
@@ -105,7 +100,6 @@ class NGramCounter(object):
             data_chunk = ['test', ]
             iteration = 0
             while data_chunk:
-                #data_chunk = list(islice(f, 0, self.chunk_size))
                 data_chunk = list(islice(f, self.chunk_size))
                 ngrams = [str(ngram).strip() for ngram in data_chunk]
 
@@ -124,14 +118,17 @@ if __name__ == "__main__":
 
     start_time = time.time()
 
-    parser = argparse.ArgumentParser(description='Basic n-gram generator based on a word-list file')
-    parser.add_argument('-f', dest='filepath', type=str, default=None, help='Path to the word-list file')
+    parser = argparse.ArgumentParser(description='Basic n-gram generator based on a word-list file.')
+    parser.add_argument('-f', dest='filepath', type=str, default=None, help='Path to the word-list file.')
+    parser.add_argument('-o', dest='outfile', type=str, default=None, help='File to save output to.')
+    parser.add_argument('-p', dest='print_n', type=int, default=None, help='Print the top N ngrams to screen.')
     args = parser.parse_args()
 
     ngg = None
-    if args.filepath:
+    if args and args.filepath:
         ngg = NGramGenerator(args.filepath)
     else:
+        parser.print_usage()
         exit()
 
     ngg.run()
@@ -140,16 +137,19 @@ if __name__ == "__main__":
     ngrams = counter.count_ngrams()
     sorted_ngrams = sorted(ngrams, key=ngrams.__getitem__, reverse=True)
 
-    n = 20
-    top_ngrams = sorted_ngrams[:n]
+    if args.print_n and args.print_n > 0:
+        n = args.print_n
+        top_ngrams = sorted_ngrams[:n]
 
-    logger.debug('Top %s ngrams: %s' % (n, top_ngrams, ))
+        for ng in top_ngrams:
+            print('%s:%s' % (ng, ngrams[ng]))
 
-    for ng in top_ngrams:
-        print('%s:%s' % (ng, ngrams[ng]))
+    save_file = 'RESULT_%s' % (hashlib.sha256(str(time.time()).encode('utf-8')).hexdigest()[:10])
+    if args.outfile:
+        save_file = args.outfile
 
-    logger.debug('Saving sorted ngrams to \'../resources/__recent_sorted.txt\'...')
-    with open('../resources/__recent_sorted.txt', 'w+') as f:
+    logger.debug('Saving sorted ngrams to \'%s\'...' % args.outfile)
+    with open(args.outfile, 'w+') as f:
         for ng in sorted_ngrams:
             f.write('%s,%s\n' % (ng, ngrams[ng]))
     logger.debug('Done.')
