@@ -1,7 +1,5 @@
 
-import argparse
 import logging
-import time
 import sys
 import pickle
 
@@ -55,7 +53,7 @@ class NGramAnalyzer(object):
 
         return word_ngrams, similar_ngrams, total_ngrams_checked
 
-    def generate_markov_matrix(self, save=True):
+    def generate_markov_matrix(self, savefile=None):
 
         logger.debug('Generating Markov Matrix from n-grams...')
         mm = {}
@@ -89,8 +87,8 @@ class NGramAnalyzer(object):
 
         p_mm = self._calculate_markov_probabilities(mm)
 
-        if save:
-            self.save_obj((char_freqs, p_mm), '../results/markov_matrix.pkl')
+        if savefile:
+            self.save_obj((char_freqs, p_mm), savefile)
 
         return char_freqs, p_mm
 
@@ -177,57 +175,6 @@ class NGramAnalyzer(object):
             selection = ''
         return selection
 
-
-
-
-
-
-
-if __name__ == '__main__':
-    start_time = time.time()
-
-    parser = argparse.ArgumentParser(description='Basic n-gram generator based on a word-list file')
-    parser.add_argument('-f', dest='filepath', type=str, default=None, help='Path to the required file for the intended purpose (use flag)')
-    parser.add_argument('-w', dest='word', type=str, default=None, help='Word to analyze')
-    parser.add_argument('-m', dest='markov', action='store_true', help='Generate Markov Matrix from counted ngram list')
-    parser.add_argument('-g', dest='genpw', type=int, default=None, help='Generate a password form the given markov model file with given length')
-    args = parser.parse_args()
-
-    nga = None
-    if args.filepath:
-        nga = NGramAnalyzer(args.filepath)
-    else:
-        parser.print_usage()
-        exit()
-
-    if args.word and nga:
-        word_ngrams, similar_ngrams, total_ngrams_checked = nga.compare(args.word)
-
-        similarity = float(len(similar_ngrams))/len(word_ngrams)
-        logger.debug('Similarity: (# similar n-grams)/(# ngrams from word) = %s' % similarity)
-
-    elif args.markov and nga:
-        char_freqs, mm = nga.generate_markov_matrix()
-
-        for ch, freq in char_freqs.items():
-            print('(%s=%s)' % (ch, freq), end=' ')
-
-        print('\n')
-
-        for ch, ch_matrix in mm.items():
-            print(ch, end=' ')
-            for ch2, p_ch2 in ch_matrix.items():
-                print('(%s:%.4f) ' % (ch2, p_ch2), end=' ')
-            print()
-
-    elif args.genpw and nga:
-
-        for i in range(100):
-            pw = nga.generate_pw_from_mm(args.genpw, prune=True, threshold=0.07)
-            print('Generated Password: %s' % pw)
-
-    end_time = time.time()
-    logger.debug('Runtime: %s' % (end_time-start_time, ))
 
 
 

@@ -1,18 +1,7 @@
 
-"""
-    For efficiency, this will probably have to be written in C and scaled with hadoop for practical use
 
-    Disclaimer: this is a prototype
-
-    Benchmarks:
-        (Laptop):   1 million words:    64s
-"""
-
-import argparse
 import os
 import logging
-import time
-import hashlib
 
 from itertools import islice
 
@@ -114,48 +103,6 @@ class NGramCounter(object):
         logger.debug('Done counting ngram frequencies.')
         return self.counts
 
-if __name__ == "__main__":
-
-    start_time = time.time()
-
-    parser = argparse.ArgumentParser(description='Basic n-gram generator based on a word-list file.')
-    parser.add_argument('-f', dest='filepath', type=str, default=None, help='Path to the word-list file.')
-    parser.add_argument('-o', dest='outfile', type=str, default=None, help='File to save output to.')
-    parser.add_argument('-p', dest='print_n', type=int, default=None, help='Print the top N ngrams to screen.')
-    args = parser.parse_args()
-
-    ngg = None
-    if args and args.filepath:
-        ngg = NGramGenerator(args.filepath)
-    else:
-        parser.print_usage()
-        exit()
-
-    ngg.run()
-
-    counter = NGramCounter(ngg.destination_file)
-    ngrams = counter.count_ngrams()
-    sorted_ngrams = sorted(ngrams, key=ngrams.__getitem__, reverse=True)
-
-    if args.print_n and args.print_n > 0:
-        n = args.print_n
-        top_ngrams = sorted_ngrams[:n]
-
-        for ng in top_ngrams:
-            print('%s:%s' % (ng, ngrams[ng]))
-
-    save_file = 'RESULT_%s.ngram' % (hashlib.sha256(str(time.time()).encode('utf-8')).hexdigest()[:10])
-    if args.outfile and args.outfile is not None:
-        save_file = args.outfile
-
-    logger.debug('Saving sorted ngrams to \'%s\'...' % save_file)
-    with open(save_file, 'w+') as f:
-        for ng in sorted_ngrams:
-            f.write('%s,%s\n' % (ng, ngrams[ng]))
-    logger.debug('Done.')
-
-    end_time = time.time()
-    logger.debug('Runtime: %s' % (end_time - start_time, ))
 
 
 

@@ -11,7 +11,3 @@ def generate_ngrams(word_list, min_size=2, max_size=None):
                 ngrams.append(word[start_pos:end_pos])
 
     return ngrams
-
-# if __name__ == "__main__":
-#     test = ["test", ]
-#     print('NGrams: ' + str(generate_ngrams(test, max_size=2)))
