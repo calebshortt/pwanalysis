@@ -43,7 +43,7 @@ class NGramGenerator(object):
         return True
 
     def run(self):
-        with open(self.filepath) as f:
+        with open(self.filepath, encoding='utf-8') as f:
 
             self.base_fname, self.base_ext = os.path.splitext(f.name)
 
@@ -64,7 +64,7 @@ class NGramGenerator(object):
         self.destination_file = '%s_ngrams_%s' % (self.base_fname, self.base_ext)
         logger.debug("Saving data... (Save File=%s)" % self.destination_file)
 
-        with open(self.destination_file, 'a+') as f:
+        with open(self.destination_file, 'a+', encoding='utf-8') as f:
             for ng in data:
                 f.write('%s\n' % ng)
         logger.debug("Done.")

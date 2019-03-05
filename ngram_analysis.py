@@ -25,6 +25,20 @@ logging.basicConfig(level=logging.DEBUG)
 
 if __name__ == "__main__":
 
+    # ---------- Common configs ----------
+
+    # General format:   python nmgram_analysis.py -f <file to act on> <action flag> -o <output file>
+
+    # Generate lsit of ngrams from password dump
+    # python ngram_analysis -f resources/10_million_password_list_top_1000000.txt -n -o resources/pw_ngrams.ngram
+
+    # Generate markov model from provided lits of ngrams
+    # python ngram_analysis -f results/pw_ngrams.ngram -m -o results/mm.model
+
+    # Generate passwords from markov model
+    # python ngram_analysis -f results/mm.model -g 10 -G
+
+
     start_time = time.time()
 
     parser = argparse.ArgumentParser(description='Basic n-gram generator and analyzer based on a word-list file.')
@@ -83,7 +97,6 @@ if __name__ == "__main__":
 
         for ch, freq in char_freqs.items():
             print('(%s=%s)' % (ch, freq), end=' ')
-
         print('\n')
 
         for ch, ch_matrix in mm.items():

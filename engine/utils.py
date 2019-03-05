@@ -7,7 +7,8 @@ def generate_ngrams(word_list, min_size=2, max_size=None):
 
                 if max_size and end_pos - start_pos > max_size:
                     break
-
                 ngrams.append(word[start_pos:end_pos])
 
     return ngrams
+
+
