@@ -33,7 +33,7 @@ class NGramGenerator(object):
         self.destination_file = '%s_ngram_%s' % (self.base_fname, self.base_ext)
 
     def _word_is_valid(self, word):
-        word = word.strip()
+        word = word.strip('\n\r')
         if len(word) < 1:
             return False
 
@@ -50,15 +50,35 @@ class NGramGenerator(object):
             data_chunk = ['test', ]
             iteration = 0
             while data_chunk:
-                # TODO: This could be multithreaded -- currently a proof of concept
+
                 data_chunk = list(islice(f, self.chunk_size))
-                sanitized = [str(word).strip() for word in data_chunk if self._word_is_valid(word)]
-                chunk_ngrams = generate_ngrams(sanitized, min_size=1)
+                data_chunk = [str(word).strip('\n\r') for word in data_chunk if self._word_is_valid(word)]
 
-                logger.debug('iteration: %s\tChunk-Size: %s' % (iteration, len(data_chunk)))
-                iteration += 1
+                try:
+                    chunk_ngrams = generate_ngrams(data_chunk, min_size=1, logger=logger)
+                    logger.debug('iteration: %s\tChunk-Size: %s' % (iteration, len(data_chunk)))
+                    iteration += 1
+                    self._save_chunk(chunk_ngrams)
+                    chunk_ngrams = []
 
-                self._save_chunk(chunk_ngrams)
+                except MemoryError:
+                    # If memory error, the resulting chunk_ngrams list is too big -- dial it back by an order of
+                    # magnitude and go through the sublists individually and save the resulting ngrams
+
+                    logger.debug('---------- Ran out of memory. Dialing back chunk size to handle ngram load. ----------')
+                    sub_chunk_lengths = int(len(data_chunk)/10)
+                    data_chunk = [data_chunk[x:x+sub_chunk_lengths] for x in range(0, len(data_chunk), sub_chunk_lengths)]
+
+                    for sublist in data_chunk:
+                        logger.debug('SUBLIST Length = %s' % len(sublist))
+                        chunk_ngrams = generate_ngrams(sublist, min_size=1, logger=logger)
+                        logger.debug('iteration: %s\tChunk-Size: %s' % (iteration, len(sublist)))
+                        iteration += 1
+                        self._save_chunk(chunk_ngrams)
+                        chunk_ngrams = []
+
+                    logger.debug('Recovered from Memory Error. Reverting back to normal ngram chunk size.')
+
 
     def _save_chunk(self, data):
         self.destination_file = '%s_ngrams_%s' % (self.base_fname, self.base_ext)
@@ -90,7 +110,8 @@ class NGramCounter(object):
             iteration = 0
             while data_chunk:
                 data_chunk = list(islice(f, self.chunk_size))
-                ngrams = [str(ngram).strip() for ngram in data_chunk]
+                ngrams = [str(ngram).strip('\n\r') for ngram in data_chunk]
+
 
                 for ng in ngrams:
                     count = self.counts.get(ng, 0)
