@@ -64,6 +64,7 @@ class NGramGenerator(object):
                 except MemoryError:
                     # If memory error, the resulting chunk_ngrams list is too big -- dial it back by an order of
                     # magnitude and go through the sublists individually and save the resulting ngrams
+                    # NOTE: Rough usage metrics: caps at 800MG ram per chunk -- depends on word length though (ngram generation)
 
                     logger.debug('---------- Ran out of memory. Dialing back chunk size to handle ngram load. ----------')
                     sub_chunk_lengths = int(len(data_chunk)/10)
@@ -105,13 +106,12 @@ class NGramCounter(object):
 
         logger.debug('Counting ngram frequencies in chunks...')
 
-        with open(self.filepath, 'r') as f:
+        with open(self.filepath, 'r', encoding='utf-8') as f:
             data_chunk = ['test', ]
             iteration = 0
             while data_chunk:
                 data_chunk = list(islice(f, self.chunk_size))
                 ngrams = [str(ngram).strip('\n\r') for ngram in data_chunk]
-
 
                 for ng in ngrams:
                     count = self.counts.get(ng, 0)
