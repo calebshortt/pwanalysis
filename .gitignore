@@ -3,3 +3,6 @@ results/
 resources/
 
 *.pyc
+*.db
+*.db-journal
+*.BAK

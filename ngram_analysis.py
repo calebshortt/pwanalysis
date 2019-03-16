@@ -65,24 +65,24 @@ if __name__ == "__main__":
         ngg.run()
 
         counter = NGramCounter(ngg.destination_file)
-        ngrams = counter.count_ngrams()
-        sorted_ngrams = sorted(ngrams, key=ngrams.__getitem__, reverse=True)
-
-        if args.print_n and args.print_n > 0:
-            n = args.print_n
-            top_ngrams = sorted_ngrams[:n]
-
-            for ng in top_ngrams:
-                print('%s:%s' % (ng, ngrams[ng]))
+        counter.count_ngrams()
 
         save_file = 'RESULT_%s.ngram' % (hashlib.sha256(str(time.time()).encode('utf-8')).hexdigest()[:10])
         if args.outfile and args.outfile is not None:
             save_file = args.outfile
 
         logger.debug('Saving sorted ngrams to \'%s\'...' % save_file)
-        with open(save_file, 'w+') as f:
-            for ng in sorted_ngrams:
-                f.write('%s,%s\n' % (ng, ngrams[ng]))
+        with open(save_file, 'w+', encoding='utf-8') as f:
+            printed = False
+            for chunk in counter.get_next_top_db_ngrams(n=counter.chunk_size):
+                if args.print_n and args.print_n > 0 and not printed:
+                    top_ngrams = chunk[:min(args.print_n, counter.chunk_size)]
+                    for ng, ct in top_ngrams:
+                        print('%s:%s' % (ng, ct))
+                    printed = True
+
+                for ng, ct in chunk:
+                    f.write('%s,%s\n' % (ng, ct))
         logger.debug('Done.')
 
 
