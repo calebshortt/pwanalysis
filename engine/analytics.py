@@ -42,7 +42,7 @@ class NGramAnalyzer(object):
             iteration = 0
             while data_chunk:
                 data_chunk = list(islice(f, self.chunk_size))
-                sanitized = [str(ng).strip() for ng in data_chunk]
+                sanitized = [str(ng).strip('\n\r') for ng in data_chunk]
                 total_ngrams_checked += len(sanitized)
 
                 for ng in word_ngrams:
@@ -59,17 +59,19 @@ class NGramAnalyzer(object):
         mm = {}
         char_freqs = {}
 
-        with open(self.pw_ng_filepath) as f:
+        with open(self.pw_ng_filepath, encoding='utf-8') as f:
 
             data_chunk = ['test', ]
             iteration = 0
             while data_chunk:
                 data_chunk = list(islice(f, self.chunk_size))
-                sanitized = [str(ng).strip().split(',') for ng in data_chunk if len(str(ng)) > 0]
+                sanitized = [str(ng).strip('\n\r').split('\t') for ng in data_chunk if len(str(ng)) > 0]
 
-                for ng, ng_count in sanitized:
+                for i, item in enumerate(sanitized):
+                    ng, ng_count = item
                     if len(ng) < 2:
                         if len(ng) == 1:
+                            # Count the frequencies of single chars
                             char_freqs[ng] = int(ng_count)
                         # Don't want to consider ngrams that have a length less than 2
                         continue
@@ -81,8 +83,7 @@ class NGramAnalyzer(object):
                         ng_matrix[ch2] = int(ng_count) + curr_ng_count
                         mm[ch1] = ng_matrix
 
-                logger.debug('Completed iteration %s (chunk-size=%s) (Markov Matrix Side (bytes)=%s)' %
-                             (iteration, self.chunk_size, sys.getsizeof(mm)))
+                logger.debug('Completed iteration %s (chunk-size=%s) (Markov Matrix Side' % (iteration, self.chunk_size))
                 iteration += 1
 
         p_mm = self._calculate_markov_probabilities(mm)

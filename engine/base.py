@@ -185,37 +185,23 @@ class NGramCounter(object):
                 logger.debug('Counting chunk %s' % iteration)
 
                 for ng in data_chunk:
-                    # count = counts.get(ng, 0)
-                    # count += 1
                     try:
-                        # counts[ng] = count
                         counts[ng] = counts.get(ng, 0) + 1
                     except MemoryError:
                         logger.debug('\tMemory Error. Reverting to DB. NOTE: This is slow.')
                         logger.debug('\tChecking DB for data values')
 
                         used_db = True
-
                         db_ngrams = self.get_db_ngrams(counts)
 
                         # Dump data chunk to free some memory
                         data_chunk = ['test', ]
                         for ng, ng_count in counts.items():
-                            # db_count = db_ngrams.get(ng, 0)
-                            # db_count += ng_count
-                            # db_ngrams[ng] = db_count
-                            # db_ngrams[ng] = db_ngrams.get(ng, 0) + ng_count
                             counts[ng] = ng_count + db_ngrams.get(ng, 0)
 
                         logger.debug('\tAdding data to DB')
-                        # self.save_db_ngrams(db_ngrams)
                         self.save_db_ngrams(counts)
                         counts = {}
-
-                    # self.get_db_ngrams(counts)
-
-                # Test code below -- not prod
-                # db_ngrams = self.get_db_ngrams(counts)
 
                 logger.debug('\tDone chunk: %s\tChunk-Size: %s' % (iteration, len(data_chunk)))
                 iteration += 1

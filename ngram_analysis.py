@@ -27,12 +27,12 @@ if __name__ == "__main__":
 
     # ---------- Common configs ----------
 
-    # General format:   python nmgram_analysis.py -f <file to act on> <action flag> -o <output file>
+    # General format:   python ngram_analysis.py -f <file to act on> <action flag> -o <output file>
 
-    # Generate lsit of ngrams from password dump
+    # Generate list of ngrams from password dump
     # python ngram_analysis -f resources/10_million_password_list_top_1000000.txt -n -o resources/pw_ngrams.ngram
 
-    # Generate markov model from provided lits of ngrams
+    # Generate markov model from provided list of ngrams
     # python ngram_analysis -f results/pw_ngrams.ngram -m -o results/mm.model
 
     # Generate passwords from markov model
@@ -82,7 +82,8 @@ if __name__ == "__main__":
                     printed = True
 
                 for ng, ct in chunk:
-                    f.write('%s,%s\n' % (ng, ct))
+                    # f.write('%s,%s\n' % (ng, ct))
+                    f.write('%s\t%s\n' % (ng, ct))
         logger.debug('Done.')
 
 
