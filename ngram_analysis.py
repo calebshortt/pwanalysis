@@ -9,7 +9,7 @@ from engine.analytics import NGramAnalyzer
 from engine.validation import PasswordVerifier
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.ERROR)
 
 """
     General format:   ./ngram_analysis.py -f <file to act on> <action flag> -o <output file>

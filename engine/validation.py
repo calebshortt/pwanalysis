@@ -7,7 +7,7 @@ from engine.utils import only_ascii, get_file
 
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.ERROR)
 
 
 class PasswordVerifier(object):

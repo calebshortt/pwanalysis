@@ -7,7 +7,7 @@ from itertools import islice
 from engine.utils import generate_ngrams, load_obj, save_obj
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.ERROR)
 
 
 class NGramAnalyzer(object):
