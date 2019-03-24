@@ -35,7 +35,7 @@ class NGramGenerator(object):
         self.destination_file = '%s_ngram_%s' % (self.base_fname, self.base_ext)
 
     def _word_is_valid(self, word):
-        word = word.strip('\n\r')
+        word = word.strip('\n\r\t')
         if len(word) < 1:
             return False
 
@@ -54,7 +54,7 @@ class NGramGenerator(object):
             while data_chunk:
 
                 data_chunk = list(islice(f, self.chunk_size))
-                data_chunk = [str(word).strip('\n\r') for word in data_chunk if self._word_is_valid(word)]
+                data_chunk = [str(word).strip('\n\r\t') for word in data_chunk if self._word_is_valid(word)]
 
                 try:
                     chunk_ngrams = generate_ngrams(data_chunk, min_size=1, logger=logger)
@@ -180,7 +180,7 @@ class NGramCounter(object):
             iteration = 0
             while data_chunk:
                 data_chunk = list(islice(f, self.chunk_size))
-                data_chunk = [str(ngram).strip('\n\r') for ngram in data_chunk]
+                data_chunk = [str(ngram).strip('\n\r\t') for ngram in data_chunk]
 
                 logger.debug('Counting chunk %s' % iteration)
 

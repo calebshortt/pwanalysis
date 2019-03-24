@@ -6,6 +6,7 @@ import hashlib
 
 from engine.base import NGramCounter, NGramGenerator
 from engine.analytics import NGramAnalyzer
+from engine.validation import PasswordVerifier
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
@@ -36,7 +37,7 @@ if __name__ == "__main__":
     # python ngram_analysis -f results/pw_ngrams.ngram -m -o results/mm.model
 
     # Generate passwords from markov model
-    # python ngram_analysis -f results/mm.model -g 10 -G
+    # python ngram_analysis -f results/mm.model -g 10 -G 100
 
 
     start_time = time.time()
@@ -49,6 +50,7 @@ if __name__ == "__main__":
     parser.add_argument('-m', dest='markov', action='store_true', help='Generate Markov Matrix from counted ngram list')
     parser.add_argument('-g', dest='genpw', type=int, default=None, help='Generate a password from the given markov model file with given length')
     parser.add_argument('-G', dest='genpws', type=int, default=None, help='Supplemental flag for -g, repeat N times.')
+    parser.add_argument('-V', dest='validate', type=str, help='Use this password file to validate generated passwords.')
     args = parser.parse_args()
 
     ngg = None
@@ -109,9 +111,27 @@ if __name__ == "__main__":
     elif args.genpw:
         num_pws = args.genpws if args.genpws else 100
 
-        for i in range(num_pws):
-            pw = nga.generate_pw_from_mm(args.genpw, prune=True, threshold=0.07)
-            print('Generated Password: %s' % pw)
+        validator = None
+        if args.validate:
+            validator = PasswordVerifier()
+            validator.init_classifier(args.validate)
+
+        gen_pws = []
+        while len(gen_pws) < num_pws:
+            pw = nga.generate_pw_from_mm(args.genpw, prune=False, threshold=0.07, onlyascii=True)
+            if validator:
+                keep = validator.classify_passwords([pw])[0]
+                if keep:
+                    gen_pws.append(pw)
+                    print(pw)
+            else:
+                gen_pws.append(pw)
+                print(pw)
+
+        # for i in range(num_pws):
+        #     # pw = nga.generate_pw_from_mm(args.genpw, prune=True, threshold=0.07)
+        #     pw = nga.generate_pw_from_mm(args.genpw, prune=False, threshold=0.07, onlyascii=True)
+        #     print('%s' % pw)
 
     end_time = time.time()
     logger.debug('Runtime: %s' % (end_time - start_time, ))

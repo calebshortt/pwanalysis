@@ -1,13 +1,14 @@
 
 import logging
-import sys
-import pickle
+# import sys
+# import pickle
 
-from numpy.random import choice
+# from numpy.random import choice
+import numpy as np
 
 from itertools import islice
 
-from engine.utils import generate_ngrams
+from engine.utils import generate_ngrams, load_obj, save_obj
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
@@ -89,7 +90,7 @@ class NGramAnalyzer(object):
         p_mm = self._calculate_markov_probabilities(mm)
 
         if savefile:
-            self.save_obj((char_freqs, p_mm), savefile)
+            save_obj((char_freqs, p_mm), savefile)
 
         return char_freqs, p_mm
 
@@ -110,17 +111,25 @@ class NGramAnalyzer(object):
 
         return p_mm
 
-    def save_obj(self, obj, filepath ):
-        with open(filepath, 'wb') as f:
-            pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
+    # def save_obj(self, obj, filepath ):
+    #     with open(filepath, 'wb') as f:
+    #         pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
+    #
+    # def load_obj(self, filepath):
+    #     with open(filepath, 'rb') as f:
+    #         return pickle.load(f)
 
-    def load_obj(self, filepath):
-        with open(filepath, 'rb') as f:
-            return pickle.load(f)
+    def generate_pw_from_mm(self, pw_length, prune=False, threshold=0.1, mutation_rate=0.1, onlyascii=True):
+        """
 
-    def generate_pw_from_mm(self, pw_length, prune=False, threshold=0.1):
+        :param pw_length:
+        :param prune:
+        :param threshold: the minimum probability that the char frequency must be to be included
+        :param mutation_rate:
+        :return:
+        """
 
-        char_freqs, mm = self.load_obj(self.pw_ng_filepath)
+        char_freqs, mm = load_obj(self.pw_ng_filepath)
 
         # Special select of first character based on derived password frequency distribution (comes with markov model)
         char_freqs_total = sum(char_freqs.values())
@@ -130,18 +139,19 @@ class NGramAnalyzer(object):
             chars.append(ch)
             freq_probs.append(float(count)/char_freqs_total)
 
-        first_char = choice(chars, p=freq_probs)
+        first_char = np.random.choice(chars, p=freq_probs)
 
         generated_password = str(first_char)
         prev_char = first_char
 
         for i in range(pw_length-1):
-            next_char = self._get_next_char_from_mm(prev_char, mm, prune=prune, threshold=threshold)
+            next_char = self._get_next_char_from_mm(prev_char, mm, prune=prune, threshold=threshold,
+                                                    mutation_rate=mutation_rate, onlyascii=onlyascii)
             generated_password += str(next_char)
 
         return generated_password
 
-    def _get_next_char_from_mm(self, current_char, mm, prune=False, threshold=0.1):
+    def _get_next_char_from_mm(self, current_char, mm, prune=False, threshold=0.1, mutation_rate=0.01, onlyascii=True):
 
         curr_ch_matrix = mm.get(current_char, {})
         char_freqs_total = sum(curr_ch_matrix.values())
@@ -149,12 +159,14 @@ class NGramAnalyzer(object):
         freq_probs = []
         chars = []
 
-        if prune:
+        if prune or onlyascii:
             # Do a first-pass to remove all items below the threshold and then recalculate the freq total, and reconstruct dict
             ch_values = []
             for ch, count in curr_ch_matrix.items():
                 ch_prob = float(count)/char_freqs_total
-                if ch_prob < threshold:
+                if prune and ch_prob < threshold:
+                    continue
+                if onlyascii and ord(ch) > 127:
                     continue
                 chars.append(ch)
                 ch_values.append(count)
@@ -171,7 +183,11 @@ class NGramAnalyzer(object):
         # print('%s avg=%s ' % (current_char, float(sum(freq_probs)) / len(freq_probs)))
 
         if len(chars) > 0 and len(freq_probs) > 0:
-            selection = choice(chars, p=freq_probs)
+            mutate = np.random.choice([True, False], p=[mutation_rate, 1.0-mutation_rate])
+            if mutate:
+                selection = np.random.choice(chars)
+            else:
+                selection = np.random.choice(chars, p=freq_probs)
         else:
             selection = ''
         return selection

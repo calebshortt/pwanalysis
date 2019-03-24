@@ -1,4 +1,7 @@
 
+import pickle
+
+
 def generate_ngrams(word_list, min_size=2, max_size=None, logger=None, max_wordlen=128):
     ngrams = []
     for word in word_list:
@@ -23,5 +26,23 @@ def generate_ngrams(word_list, min_size=2, max_size=None, logger=None, max_wordl
                     raise
 
     return ngrams
+
+def load_obj(filepath):
+    with open(filepath, 'rb') as f:
+        return pickle.load(f)
+
+def save_obj(self, obj, filepath ):
+    with open(filepath, 'wb') as f:
+        pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
+
+def only_ascii(char_list):
+    return [ch for ch in char_list if ord(ch) < 128]
+
+def get_file(f, chunk_size=1000000):
+    result = []
+    for i in range(chunk_size):
+        result.append(f.readline().strip('\n\r'))
+    return result
+
 
 
