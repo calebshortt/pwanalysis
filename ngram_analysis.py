@@ -12,33 +12,25 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
 
 """
+    General format:   ./ngram_analysis.py -f <file to act on> <action flag> -o <output file>
+
     Examples:
         Generate ngrams:                                    ./ngram_analysis -f passwords.txt -n -o pw_ngrams.ngram
         Generate Markov Matrix from ngrams:                 ./ngram_analysis -f pw_ngrams.ngram -m -o mm.model
         Generate 50 passwords of length 10 from M. Matrix:  ./ngram_analysis -f mm.model -g 10 -G 50
 
+        NOTE:
+            Add -V <password file> to "-g" to validate generated passwords against a trained classifier
+            See below example
+
         ./ngram_analysis -f resources/10_million_password_list_top_1000000.txt -n -o results/pw_ngrams.ngram
         ./ngram_analysis -f results/pw_ngrams.ngram -m -o results/mm.model
-        ./ngram_analysis -f results/mm.model -g 10 -G 50
+        ./ngram_analysis -f results/mm.model -g 10 -G 50 -V resources/rockyou.txt
 
 
 """
 
 if __name__ == "__main__":
-
-    # ---------- Common configs ----------
-
-    # General format:   python ngram_analysis.py -f <file to act on> <action flag> -o <output file>
-
-    # Generate list of ngrams from password dump
-    # python ngram_analysis -f resources/10_million_password_list_top_1000000.txt -n -o resources/pw_ngrams.ngram
-
-    # Generate markov model from provided list of ngrams
-    # python ngram_analysis -f results/pw_ngrams.ngram -m -o results/mm.model
-
-    # Generate passwords from markov model
-    # python ngram_analysis -f results/mm.model -g 10 -G 100
-
 
     start_time = time.time()
 
@@ -127,11 +119,6 @@ if __name__ == "__main__":
             else:
                 gen_pws.append(pw)
                 print(pw)
-
-        # for i in range(num_pws):
-        #     # pw = nga.generate_pw_from_mm(args.genpw, prune=True, threshold=0.07)
-        #     pw = nga.generate_pw_from_mm(args.genpw, prune=False, threshold=0.07, onlyascii=True)
-        #     print('%s' % pw)
 
     end_time = time.time()
     logger.debug('Runtime: %s' % (end_time - start_time, ))

@@ -1,9 +1,5 @@
 
 import logging
-# import sys
-# import pickle
-
-# from numpy.random import choice
 import numpy as np
 
 from itertools import islice
@@ -111,14 +107,6 @@ class NGramAnalyzer(object):
 
         return p_mm
 
-    # def save_obj(self, obj, filepath ):
-    #     with open(filepath, 'wb') as f:
-    #         pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
-    #
-    # def load_obj(self, filepath):
-    #     with open(filepath, 'rb') as f:
-    #         return pickle.load(f)
-
     def generate_pw_from_mm(self, pw_length, prune=False, threshold=0.1, mutation_rate=0.1, onlyascii=True):
         """
 
@@ -179,8 +167,6 @@ class NGramAnalyzer(object):
             ch_prob = float(count)/char_freqs_total
             chars.append(ch)
             freq_probs.append(ch_prob)
-
-        # print('%s avg=%s ' % (current_char, float(sum(freq_probs)) / len(freq_probs)))
 
         if len(chars) > 0 and len(freq_probs) > 0:
             mutate = np.random.choice([True, False], p=[mutation_rate, 1.0-mutation_rate])

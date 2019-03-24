@@ -25,9 +25,6 @@ class PasswordVerifier(object):
         :return:
         """
         logger.debug('Initializing classifier...')
-
-        # TODO: The below values are default values -- look at modifying them
-        # self.classifier = OneClassSVM(nu=0.1, kernel="rbf", gamma=0.1)
         self.classifier = OneClassSVM(kernel="rbf", gamma='auto')
 
         logger.debug('Loading password dump training file...')
