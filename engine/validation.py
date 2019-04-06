@@ -48,20 +48,37 @@ class PasswordVerifier(object):
         num_pws = [self.str_to_numbers(s.strip('\n\r')) for s in password_list]
         return [x > 0 for x in self.classifier.predict(num_pws)]
 
-    def str_to_numbers(self, string, ascii_only=True):
+    def str_to_numbers(self, string, ascii_only=True, max_pw_length=100):
 
         # TODO: I KNOW there is a better way to do this -- figure it out
-        if ascii_only:
-            result = [0]*128
-        else:
-            # The number of unicode entries
-            result = [0]*137928
+        # IDEA: Instead of training moel on all possible chars, have a nnumber per char place
+        #       This would mean only having an array of 8 ints for an 8-char password
+        #       If this works, this would SIGNIFICANTLY reduce size restrictions and would negate the need
+        #           for an "ascii_only" flag
 
-        for ch in string:
+        # 50MB to do this (Via Profile)
+        result = [0]*max_pw_length
+        for i, ch in enumerate(string):
             try:
-                result[ord(ch)] = ord(ch)
+                result[i] = ord(ch)
             except:
-                logger.error('ERROR: ord(%s) = %s' % (ch, ord(ch)))
+                logger.error('ERROR: i=%s; result[i] = ord(%s) = %s' % (i, ch, ord(ch)))
                 raise
+
+        # 55MB, prone to errors
+        # TODO: Compare both methods and see which ones produce better passwords
+        # TODO: Unsure how to compare the results -- how to say which password list is better
+        # if ascii_only:
+        #     result = [0]*128
+        # else:
+        #     # The number of unicode entries
+        #     result = [0]*137928
+        #
+        # for ch in string:
+        #     try:
+        #         result[ord(ch)] = ord(ch)
+        #     except:
+        #         logger.error('ERROR: ord(%s) = %s' % (ch, ord(ch)))
+        #         raise
         return result
 
