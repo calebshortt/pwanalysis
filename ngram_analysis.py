@@ -9,7 +9,7 @@ from engine.analytics import NGramAnalyzer
 from engine.validation import PasswordVerifier
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.ERROR)
+logging.basicConfig(level=logging.DEBUG)
 
 """
     General format:   ./ngram_analysis.py -f <file to act on> <action flag> -o <output file>
@@ -43,30 +43,34 @@ if __name__ == "__main__":
     parser.add_argument('-g', dest='genpw', type=int, default=None, help='Generate a password from the given markov model file with given length')
     parser.add_argument('-G', dest='genpws', type=int, default=None, help='Supplemental flag for -g, repeat N times.')
     parser.add_argument('-V', dest='validate', type=str, help='Use this password file to validate generated passwords.')
+    parser.add_argument('-A', dest='all', type=str, help='Run entire framework on provied wordlist.')
     args = parser.parse_args()
 
     ngg = None
     nga = None
-    if args and args.filepath:
-        ngg = NGramGenerator(args.filepath)
-        nga = NGramAnalyzer(args.filepath)
+    ng_save_file = None
+    mm_save_file = None
+    if args and (args.filepath or args.all):
+        fp = args.filepath if args.filepath else args.all
+        ngg = NGramGenerator(fp)
+        # nga = NGramAnalyzer(fp)
     else:
         parser.print_usage()
         exit()
 
     # Generator functions
-    if args.genngrams:
+    if args.genngrams or args.all:
         ngg.run()
 
         counter = NGramCounter(ngg.destination_file)
         counter.count_ngrams()
 
-        save_file = 'RESULT_%s.ngram' % (hashlib.sha256(str(time.time()).encode('utf-8')).hexdigest()[:10])
+        ng_save_file = 'RESULT_%s.ngram' % (hashlib.sha256(str(time.time()).encode('utf-8')).hexdigest()[:10])
         if args.outfile and args.outfile is not None:
-            save_file = args.outfile
+            ng_save_file = args.outfile
 
-        logger.debug('Saving sorted ngrams to \'%s\'...' % save_file)
-        with open(save_file, 'w+', encoding='utf-8') as f:
+        logger.debug('Saving sorted ngrams to \'%s\'...' % ng_save_file)
+        with open(ng_save_file, 'w+', encoding='utf-8') as f:
             printed = False
             for chunk in counter.get_next_top_db_ngrams(n=counter.chunk_size):
                 if args.print_n and args.print_n > 0 and not printed:
@@ -76,41 +80,50 @@ if __name__ == "__main__":
                     printed = True
 
                 for ng, ct in chunk:
-                    # f.write('%s,%s\n' % (ng, ct))
                     f.write('%s\t%s\n' % (ng, ct))
         logger.debug('Done.')
 
 
     # Analysis functions
-    elif args.markov:
+    if args.markov or args.all:
 
-        save_file = 'RESULT_%s.model' % (hashlib.sha256(str(time.time()).encode('utf-8')).hexdigest()[:10])
+        mm_save_file = 'RESULT_%s.model' % (hashlib.sha256(str(time.time()).encode('utf-8')).hexdigest()[:10])
         if args.outfile and args.outfile is not None:
-            save_file = args.outfile
+            mm_save_file = args.outfile
 
-        char_freqs, mm = nga.generate_markov_matrix(savefile=save_file)
+        nga = NGramAnalyzer(ng_save_file if ng_save_file else ngg.filepath)
+        char_freqs, mm = nga.generate_markov_matrix(savefile=mm_save_file)
 
-        for ch, freq in char_freqs.items():
-            print('(%s=%s)' % (ch, freq), end=' ')
-        print('\n')
+        # for ch, freq in char_freqs.items():
+        #     print('(%s=%s)' % (ch, freq), end=' ')
+        # print('\n')
+        #
+        # for ch, ch_matrix in mm.items():
+        #     print(ch, end=' ')
+        #     for ch2, p_ch2 in ch_matrix.items():
+        #         print('(%s:%.4f) ' % (ch2, p_ch2), end=' ')
+        #     print()
 
-        for ch, ch_matrix in mm.items():
-            print(ch, end=' ')
-            for ch2, p_ch2 in ch_matrix.items():
-                print('(%s:%.4f) ' % (ch2, p_ch2), end=' ')
-            print()
-
-    elif args.genpw:
+    if args.genpw or args.all:
         num_pws = args.genpws if args.genpws else 100
+        pw_len = args.genpw if args.genpw else 10
+        if not nga:
+            nga = NGramAnalyzer(args.all if args.all else args.filepath)
+
+        if args.filepath:
+            mm_save_file = args.filepath
 
         validator = None
         if args.validate:
+            valid_fp = args.validate if args.validate else args.all
             validator = PasswordVerifier()
-            validator.init_classifier(args.validate)
+            validator.init_classifier(valid_fp)
 
         gen_pws = []
+        logger.debug('Generating Strings... (Depending on verification values this may take a while)')
         while len(gen_pws) < num_pws:
-            pw = nga.generate_pw_from_mm(args.genpw, prune=False, threshold=0.07, onlyascii=True)
+            # pw = nga.generate_pw_from_mm(pw_len, prune=False, threshold=0.07, onlyascii=True, filepath=mm_save_file)
+            pw = nga.generate_pw_from_mm(pw_len, prune=False, threshold=0.2, onlyascii=True, filepath=mm_save_file)
             if validator:
                 keep = validator.classify_passwords([pw])[0]
                 if keep:

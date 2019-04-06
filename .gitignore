@@ -6,3 +6,5 @@ resources/
 *.db
 *.db-journal
 *.BAK
+*.model
+*.ngram

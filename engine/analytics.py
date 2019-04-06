@@ -7,7 +7,7 @@ from itertools import islice
 from engine.utils import generate_ngrams, load_obj, save_obj
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.ERROR)
+logging.basicConfig(level=logging.DEBUG)
 
 
 class NGramAnalyzer(object):
@@ -50,13 +50,15 @@ class NGramAnalyzer(object):
 
         return word_ngrams, similar_ngrams, total_ngrams_checked
 
-    def generate_markov_matrix(self, savefile=None):
+    def generate_markov_matrix(self, savefile=None, ng_filepath=None):
 
         logger.debug('Generating Markov Matrix from n-grams...')
         mm = {}
         char_freqs = {}
+        ng_fp = ng_filepath if ng_filepath else self.pw_ng_filepath
 
-        with open(self.pw_ng_filepath, encoding='utf-8') as f:
+
+        with open(ng_fp, encoding='utf-8') as f:
 
             data_chunk = ['test', ]
             iteration = 0
@@ -107,7 +109,7 @@ class NGramAnalyzer(object):
 
         return p_mm
 
-    def generate_pw_from_mm(self, pw_length, prune=False, threshold=0.1, mutation_rate=0.1, onlyascii=True):
+    def generate_pw_from_mm(self, pw_length, prune=False, threshold=0.1, mutation_rate=0.1, onlyascii=True, filepath=None):
         """
 
         :param pw_length:
@@ -116,8 +118,8 @@ class NGramAnalyzer(object):
         :param mutation_rate:
         :return:
         """
-
-        char_freqs, mm = load_obj(self.pw_ng_filepath)
+        mm_fp = filepath if filepath else self.pw_ng_filepath
+        char_freqs, mm = load_obj(mm_fp)
 
         # Special select of first character based on derived password frequency distribution (comes with markov model)
         char_freqs_total = sum(char_freqs.values())
