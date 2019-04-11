@@ -4,13 +4,16 @@ import os
 import logging
 import sqlite3
 import time
+import hashlib
 
 from itertools import islice
+from pathlib import Path
 
+import settings
 from engine.utils import generate_ngrams
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG if settings.DEBUG else logging.ERROR)
 
 
 class NGramGenerator(object):
@@ -28,11 +31,15 @@ class NGramGenerator(object):
 
     def __init__(self, filepath, chunk_size=500000):
         if not filepath or type(filepath) is not str:
-            raise AttributeError("Invalid file path.")
+            raise AttributeError("Invalid or unspecified file path.")
 
         self.filepath = filepath
         self.chunk_size = chunk_size
-        self.destination_file = '%s_ngram_%s' % (self.base_fname, self.base_ext)
+        self.destination_file = '%s%s.%s' % (
+            settings.RESULT_PATH,
+            self.base_fname + '_' + hashlib.sha256(str(time.time()).encode('utf-8')).hexdigest()[:10],
+            settings.EXT_NGRAM
+        )
 
     def _word_is_valid(self, word):
         word = word.strip('\n\r\t')
@@ -47,7 +54,8 @@ class NGramGenerator(object):
     def run(self):
         with open(self.filepath, encoding='utf-8') as f:
 
-            self.base_fname, self.base_ext = os.path.splitext(f.name)
+            # self.base_fname, self.base_ext = os.path.splitext(f.name)
+            self.base_fname, self.base_ext = os.path.splitext(os.path.basename(f.name))
 
             data_chunk = ['test', ]
             iteration = 0
@@ -84,7 +92,13 @@ class NGramGenerator(object):
 
 
     def _save_chunk(self, data):
-        self.destination_file = '%s_ngrams_%s' % (self.base_fname, self.base_ext)
+        if not self.destination_file:
+            # self.destination_file = '%s_ngrams_%s' % (self.base_fname, self.base_ext)
+            self.destination_file = '%s%s.%s' % (
+                settings.RESULT_PATH,
+                self.base_fname + '_' + hashlib.sha256(str(time.time()).encode('utf-8')).hexdigest()[:10],
+                settings.EXT_NGRAM
+            )
         logger.debug("Saving data... (Save File=%s)" % self.destination_file)
 
         with open(self.destination_file, 'a+', encoding='utf-8') as f:
@@ -105,9 +119,16 @@ class NGramCounter(object):
     def __init__(self, filepath, chunk_size=500000):
         self.filepath = filepath
         self.chunk_size = chunk_size
-        self.init_db()
+        self.init_db(settings.DB_NAME)
 
-    def init_db(self, db_name='ng_counts.db'):
+    def init_db(self, db_name='ng_counts.db', remove_existing=True):
+
+        if remove_existing:
+            logger.debug('Removing existing database at %s' % db_name)
+            model_file = Path(db_name)
+            if model_file.is_file():
+                model_file.unlink()
+
         if not self.conn:
             self.conn = sqlite3.connect(db_name)
         cursor = self.conn.cursor()
@@ -131,7 +152,6 @@ class NGramCounter(object):
             results = cursor.fetchmany(int(self.chunk_size))
             for result in results:
                 if result[0] in counts.keys():
-                    # db_ngrams[str(result[0])] = int(result[1])
                     counts[str(result[0])] += int(result[1])
         logger.debug('Fetch Duration: %s s' % (time.time()-start, ))
         return counts

@@ -4,12 +4,14 @@ import logging
 import time
 import hashlib
 
+import settings
 from engine.base import NGramCounter, NGramGenerator
 from engine.analytics import NGramAnalyzer
 from engine.validation import PasswordVerifier
 
+
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG if settings.DEBUG else logging.ERROR)
 
 """
     General format:   ./ngram_analysis.py -f <file to act on> <action flag> -o <output file>
@@ -65,7 +67,12 @@ if __name__ == "__main__":
         counter = NGramCounter(ngg.destination_file)
         counter.count_ngrams()
 
-        ng_save_file = 'RESULT_%s.ngram' % (hashlib.sha256(str(time.time()).encode('utf-8')).hexdigest()[:10])
+        ng_save_file = '%sRESULT_%s.%s' % (
+            settings.RESULT_PATH,
+            hashlib.sha256(str(time.time()).encode('utf-8')).hexdigest()[:10],
+            settings.EXT_NG_COUNTS
+        )
+
         if args.outfile and args.outfile is not None:
             ng_save_file = args.outfile
 
@@ -87,7 +94,12 @@ if __name__ == "__main__":
     # Analysis functions
     if args.markov or args.all:
 
-        mm_save_file = 'RESULT_%s.model' % (hashlib.sha256(str(time.time()).encode('utf-8')).hexdigest()[:10])
+        mm_save_file = '%sRESULT_%s.%s' % (
+            settings.RESULT_PATH,
+            hashlib.sha256(str(time.time()).encode('utf-8')).hexdigest()[:10],
+            settings.EXT_MODEL
+        )
+
         if args.outfile and args.outfile is not None:
             mm_save_file = args.outfile
 
@@ -121,9 +133,9 @@ if __name__ == "__main__":
 
         gen_pws = []
         logger.debug('Generating Strings... (Depending on verification values this may take a while)')
-        while len(gen_pws) < num_pws:
-            # pw = nga.generate_pw_from_mm(pw_len, prune=False, threshold=0.07, onlyascii=True, filepath=mm_save_file)
-            pw = nga.generate_pw_from_mm(pw_len, prune=False, threshold=0.2, onlyascii=True, filepath=mm_save_file)
+        while len(gen_pws) <= num_pws:
+            # pw = nga.generate_pw_from_mm(pw_len, prune=False, threshold=0.07, filepath=mm_save_file)
+            pw = nga.generate_pw_from_mm(pw_len, prune=False, threshold=0.2, filepath=mm_save_file)
             if validator:
                 keep = validator.classify_passwords([pw])[0]
                 if keep:

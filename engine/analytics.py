@@ -4,10 +4,11 @@ import numpy as np
 
 from itertools import islice
 
+import settings
 from engine.utils import generate_ngrams, load_obj, save_obj
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG if settings.DEBUG else logging.ERROR)
 
 
 class NGramAnalyzer(object):
@@ -82,7 +83,7 @@ class NGramAnalyzer(object):
                         ng_matrix[ch2] = int(ng_count) + curr_ng_count
                         mm[ch1] = ng_matrix
 
-                logger.debug('Completed iteration %s (chunk-size=%s) (Markov Matrix Side' % (iteration, self.chunk_size))
+                logger.debug('Completed iteration %s (chunk-size=%s)' % (iteration, self.chunk_size))
                 iteration += 1
 
         p_mm = self._calculate_markov_probabilities(mm)
@@ -109,15 +110,8 @@ class NGramAnalyzer(object):
 
         return p_mm
 
-    def generate_pw_from_mm(self, pw_length, prune=False, threshold=0.1, mutation_rate=0.1, onlyascii=True, filepath=None):
-        """
+    def generate_pw_from_mm(self, pw_length, prune=False, threshold=0.1, mutation_rate=0.1, filepath=None, **kwargs):
 
-        :param pw_length:
-        :param prune:
-        :param threshold: the minimum probability that the char frequency must be to be included
-        :param mutation_rate:
-        :return:
-        """
         mm_fp = filepath if filepath else self.pw_ng_filepath
         char_freqs, mm = load_obj(mm_fp)
 
@@ -135,13 +129,12 @@ class NGramAnalyzer(object):
         prev_char = first_char
 
         for i in range(pw_length-1):
-            next_char = self._get_next_char_from_mm(prev_char, mm, prune=prune, threshold=threshold,
-                                                    mutation_rate=mutation_rate, onlyascii=onlyascii)
+            next_char = self._get_next_char_from_mm(prev_char, mm, prune=prune, threshold=threshold, mutation_rate=mutation_rate)
             generated_password += str(next_char)
 
         return generated_password
 
-    def _get_next_char_from_mm(self, current_char, mm, prune=False, threshold=0.1, mutation_rate=0.01, onlyascii=True):
+    def _get_next_char_from_mm(self, current_char, mm, prune=False, threshold=0.1, mutation_rate=0.01):
 
         curr_ch_matrix = mm.get(current_char, {})
         char_freqs_total = sum(curr_ch_matrix.values())
@@ -149,14 +142,12 @@ class NGramAnalyzer(object):
         freq_probs = []
         chars = []
 
-        if prune or onlyascii:
+        if prune:
             # Do a first-pass to remove all items below the threshold and then recalculate the freq total, and reconstruct dict
             ch_values = []
             for ch, count in curr_ch_matrix.items():
                 ch_prob = float(count)/char_freqs_total
                 if prune and ch_prob < threshold:
-                    continue
-                if onlyascii and ord(ch) > 127:
                     continue
                 chars.append(ch)
                 ch_values.append(count)

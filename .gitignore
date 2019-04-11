@@ -1,10 +1,12 @@
 .idea/
 results/
 resources/
+validators/
 
 *.pyc
 *.db
 *.db-journal
 *.BAK
+*.RY_BAK
 *.model
 *.ngram
