@@ -106,16 +106,6 @@ if __name__ == "__main__":
         nga = NGramAnalyzer(ng_save_file if ng_save_file else ngg.filepath)
         char_freqs, mm = nga.generate_markov_matrix(savefile=mm_save_file)
 
-        # for ch, freq in char_freqs.items():
-        #     print('(%s=%s)' % (ch, freq), end=' ')
-        # print('\n')
-        #
-        # for ch, ch_matrix in mm.items():
-        #     print(ch, end=' ')
-        #     for ch2, p_ch2 in ch_matrix.items():
-        #         print('(%s:%.4f) ' % (ch2, p_ch2), end=' ')
-        #     print()
-
     if args.genpw or args.all:
         num_pws = args.genpws if args.genpws else 100
         pw_len = args.genpw if args.genpw else 10

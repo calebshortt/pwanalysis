@@ -14,7 +14,6 @@ DB_NAME = 'ng_counts.db'
 
 # Config Variables
 DEBUG = True
-VALIDATION = True
 
 
 
