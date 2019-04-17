@@ -9,7 +9,7 @@ from engine import utils
 class ToolKit(object):
 
     def get_file(self, filepath):
-        with open(filepath, 'r') as f:
+        with open(filepath, 'r', encoding='utf-8') as f:
             str_list = utils.get_file(f)
         return str_list
 

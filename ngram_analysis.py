@@ -119,7 +119,7 @@ if __name__ == "__main__":
         if args.validate:
             valid_fp = args.validate if args.validate else args.all
             validator = PasswordVerifier()
-            validator.init_classifier(valid_fp)
+            validator.init_classifier(valid_fp, pw_len=pw_len)
 
         gen_pws = []
         logger.debug('Generating Strings... (Depending on verification values this may take a while)')
